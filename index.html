@@ -449,6 +449,9 @@
     color: var(--muted);
     margin-top: 50px;
   }
+  footer p{ margin: 0 0 10px; }
+  footer p:last-child{ margin-bottom: 0; }
+  .visit-counter img{ vertical-align: middle; height: 20px; }
 
   /* ---------- Mobile: cards instead of tables ---------- */
   @media (max-width: 720px){
@@ -506,6 +509,7 @@
       <div class="tl-field"><div class="k">FAILE LAADITUD</div><div class="v" id="fFileCount">0</div></div>
       <div class="tl-field"><div class="k">DETAILE KOKKU</div><div class="v" id="fRowCount">0</div></div>
       <div class="tl-field"><div class="k">KOGUMAKSUMUS</div><div class="v accent" id="fGrandTotal">0,00 €</div></div>
+      <div class="tl-field"><div class="k">LEHE KÜLASTUSI</div><div class="v" id="fVisitCount">—</div></div>
     </div>
   </div>
 
@@ -578,7 +582,12 @@
 
   <div class="empty-state" id="emptyState">Laadi üles vähemalt üks .txt fail, et alustada.</div>
 
-  <footer>Kõik andmed ja hinnad jäävad sinu brauserisse — midagi ei saadeta serverisse.</footer>
+  <footer>
+    <p>Kõik andmed ja hinnad jäävad sinu brauserisse — midagi ei saadeta serverisse.</p>
+    <p class="visit-counter">
+      <img src="https://visitor-badge.laobi.icu/badge?page_id=jyrgen-gen.loikeleht&amp;left_text=Kylastusi&amp;left_color=%2322201B&amp;right_color=%23B5562F" alt="Lehe külastuste loendur" loading="lazy">
+    </p>
+  </footer>
 </div>
 
 <script>
@@ -1204,6 +1213,26 @@
     });
   }
 
+  // ---------- visit counter (simple, no signup needed) ----------
+  function trackVisit(){
+    var el = document.getElementById('fVisitCount');
+    if(!el) return;
+    try{
+      var ns = (location.hostname || 'local').replace(/[^a-z0-9]/gi, '-').toLowerCase();
+      var key = 'loikeleht-visits';
+      fetch('https://abacus.jasoncameron.dev/hit/' + ns + '/' + key)
+        .then(function(res){ return res.ok ? res.json() : null; })
+        .then(function(data){
+          if(data && typeof data.value === 'number'){
+            el.textContent = data.value.toLocaleString('et-EE');
+          } else {
+            el.textContent = 'pole saadaval';
+          }
+        })
+        .catch(function(){ el.textContent = 'pole saadaval'; });
+    }catch(e){ el.textContent = 'pole saadaval'; }
+  }
+
   // ---------- init ----------
   function init(){
     state.materials = {};
@@ -1247,6 +1276,7 @@
 
     toggleSections();
     loadRepoFiles();
+    trackVisit();
   }
 
   document.addEventListener('DOMContentLoaded', init);

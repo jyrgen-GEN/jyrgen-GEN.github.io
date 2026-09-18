@@ -35,6 +35,16 @@ Käsitsi üleslaaditud (drag & drop / kliki) failid on vaikimisi **aktiivsed** (
 
 **Piirang:** see automaatlaadimine töötab ainult siis, kui leht on avatud üle `http(s)://` (nt GitHub Pages, mõni muu veebimajutus, või kohalik server nagu `python3 -m http.server`). Kui avad `index.html` failina otse brauseris topeltklõpsuga (`file://...`), blokeerib brauser turvakaalutlustel sellised päringud ja `txt/` kausta faile automaatselt sisse ei loeta — üleslaadimine käsitsi töötab aga alati.
 
+## Külastuste loendur
+
+Lehe päises ("LEHE KÜLASTUSI") on lihtne külastuste loendur, mis kasutab tasuta ja registreerimist mittevajavat teenust [abacus.jasoncameron.dev](https://abacus.jasoncameron.dev/). Loendur suureneb üks kord iga kord, kui keegi lehe avab (leht peab olema avatud üle `http(s)://`, mitte `file://`).
+
+**Omadused:**
+- Loeb kõiki lehe avamisi (mitte unikaalseid külastajaid) — kui sama inimene värskendab lehte 3 korda, loeb see 3 külastust.
+- Loendur on seotud domeeniga automaatselt (nt `jyrgen-gen-github-io`), nii et pole vaja midagi käsitsi seadistada.
+- Kuna tegu on kolmanda osapoole tasuta teenusega, ei ole 100% garantiid, et see alati kättesaadav on — kui teenus ei vasta, näitab loendur "pole saadaval", kuid ülejäänud leht töötab tavapäraselt edasi.
+- Kuna tegu on avaliku jagatud teenusega, on teoreetiline (kuigi väike) võimalus, et mõni teine sama nimega domeen kasutab sama loendurit — kui soovid kindlamat unikaalsust, saab koodis (`trackVisit` funktsioon) `key` muutuja väärtust ise muuta millekski unikaalsemaks.
+
 ## Sisendfaili formaat
 
 Tab-eraldajaga `.txt` fail, esimene rida on veerupäis:
