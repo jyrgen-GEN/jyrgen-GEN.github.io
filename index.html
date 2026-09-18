@@ -548,12 +548,11 @@
 
   <section id="detailsSection" style="display:none;">
     <div class="sec-head"><span class="sec-num">03</span><h2>Detailide loend</h2></div>
-    <p class="sec-note">Kõiki detaile käsitletakse kandiliste (ristkülikukujuliste) toorikutena. Kogus ja maksumus sisaldavad juba faili koguse kordajat ja materjali prügiprotsenti. Kuvatakse ainult aktiivseks märgitud failide detailid.</p>
+    <p class="sec-note">Kõiki detaile käsitletakse kandiliste (ristkülikukujuliste) toorikutena. Samad tooted (sama nimetus, mõõdud ja materjal) liidetakse üheks reaks kokku. Kogus ja maksumus sisaldavad juba faili koguse kordajat ja materjali prügiprotsenti. Kuvatakse ainult aktiivseks märgitud failide detailid.</p>
     <div class="tablewrap responsive-cards">
       <table>
         <thead>
           <tr>
-            <th>Kood</th>
             <th>Nimetus</th>
             <th>Kogus</th>
             <th>Mõõdud (mm)</th>
@@ -964,40 +963,67 @@
     });
   }
 
+  function groupKey(row){
+    return [row.nimi, row.pikkus, row.laius, row.paksus, row.pohimaterjal, row.pealistus].join('||');
+  }
+
+  function fmtCount(n){
+    if(Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+    return n.toLocaleString('et-EE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+
   function renderDetails(){
     var body = document.getElementById('detailsBody');
     body.innerHTML = '';
     var activeRows = state.rows.filter(function(row){ return isFileActive(row.sourceId); });
+
+    var groups = {};
+    var order = [];
     activeRows.forEach(function(row){
       var res = calcRow(row);
+      var key = groupKey(row);
+      if(!groups[key]){
+        groups[key] = {
+          nimi: row.nimi, pikkus: row.pikkus, laius: row.laius, paksus: row.paksus,
+          pohimaterjal: row.pohimaterjal,
+          kogus: 0, qty: 0, unit: res.unit, cost: 0, complete: true
+        };
+        order.push(key);
+      }
+      var g = groups[key];
+      g.kogus += res.effKogus;
+      g.qty += res.qty;
+      g.unit = res.unit;
+      if(res.cost === null){ g.complete = false; }
+      else { g.cost += res.cost; }
+    });
+
+    order.forEach(function(key){
+      var g = groups[key];
       var tr = document.createElement('tr');
 
-      var mult = getFileMultiplier(row.sourceId);
-      var kogusText = mult !== 1 ? (row.kogus + ' × ' + mult + ' = ' + res.effKogus) : String(row.kogus);
-
-      tr.appendChild(td(row.kood, 'Kood'));
-      tr.appendChild(td(row.nimi, 'Nimetus', 'name-cell'));
-      tr.appendChild(td(kogusText, 'Kogus', 'num'));
-      tr.appendChild(td(row.pikkus + ' × ' + row.laius + ' × ' + row.paksus, 'Mõõdud (mm)'));
+      tr.appendChild(td(g.nimi, 'Nimetus', 'name-cell'));
+      tr.appendChild(td(fmtCount(g.kogus) + ' tk', 'Kogus', 'num'));
+      tr.appendChild(td(g.pikkus + ' × ' + g.laius + ' × ' + g.paksus, 'Mõõdud (mm)'));
 
       var matTag = document.createElement('span');
       matTag.className = 'material-tag';
-      matTag.textContent = row.pohimaterjal;
+      matTag.textContent = g.pohimaterjal;
       var tdMat = document.createElement('td');
       tdMat.setAttribute('data-label', 'Materjal');
       tdMat.appendChild(matTag);
       tr.appendChild(tdMat);
 
-      tr.appendChild(td(fmtQty(res.qty) + ' ' + res.unit, 'Kogus (sh prügi)', 'num'));
+      tr.appendChild(td(fmtQty(g.qty) + ' ' + g.unit, 'Kogus (sh prügi)', 'num'));
 
       var tdCost = document.createElement('td');
       tdCost.setAttribute('data-label', 'Maksumus');
-      if(res.cost === null){
+      if(!g.complete){
         tdCost.className = 'cost missing';
         tdCost.textContent = 'hind puudu';
       } else {
         tdCost.className = 'cost';
-        tdCost.textContent = fmtMoney(res.cost);
+        tdCost.textContent = fmtMoney(g.cost);
       }
       tr.appendChild(tdCost);
 
