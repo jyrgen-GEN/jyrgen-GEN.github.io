@@ -548,7 +548,7 @@
 
   <section id="detailsSection" style="display:none;">
     <div class="sec-head"><span class="sec-num">03</span><h2>Detailide loend</h2></div>
-    <p class="sec-note">Kõiki detaile käsitletakse kandiliste (ristkülikukujuliste) toorikutena. Samad tooted (sama nimetus, mõõdud ja materjal) liidetakse üheks reaks kokku. Kogus ja maksumus sisaldavad juba faili koguse kordajat ja materjali prügiprotsenti. Kuvatakse ainult aktiivseks märgitud failide detailid.</p>
+    <p class="sec-note">Kõiki detaile käsitletakse kandiliste (ristkülikukujuliste) toorikutena. Samad tooted (sama nimetus, mõõdud ja materjal) liidetakse üheks reaks kokku. Kogus ja maksumus sisaldavad juba faili koguse kordajat ja materjali prügiprotsenti. "Hind / tk" näitab ühe detaili hinda, "Maksumus" kogu koguse (kõigi tükkide) maksumust. Kuvatakse ainult aktiivseks märgitud failide detailid.</p>
     <div class="tablewrap responsive-cards">
       <table>
         <thead>
@@ -558,6 +558,7 @@
             <th>Mõõdud (mm)</th>
             <th>Materjal</th>
             <th>Kogus (sh prügi)</th>
+            <th>Hind / tk</th>
             <th>Maksumus</th>
           </tr>
         </thead>
@@ -1016,6 +1017,18 @@
 
       tr.appendChild(td(fmtQty(g.qty) + ' ' + g.unit, 'Kogus (sh prügi)', 'num'));
 
+      var tdUnitCost = document.createElement('td');
+      tdUnitCost.setAttribute('data-label', 'Hind / tk');
+      var unitCost = (g.complete && g.kogus > 0) ? (g.cost / g.kogus) : null;
+      if(unitCost === null){
+        tdUnitCost.className = 'cost missing';
+        tdUnitCost.textContent = 'hind puudu';
+      } else {
+        tdUnitCost.className = 'num';
+        tdUnitCost.textContent = fmtMoney(unitCost) + ' / tk';
+      }
+      tr.appendChild(tdUnitCost);
+
       var tdCost = document.createElement('td');
       tdCost.setAttribute('data-label', 'Maksumus');
       if(!g.complete){
@@ -1023,7 +1036,7 @@
         tdCost.textContent = 'hind puudu';
       } else {
         tdCost.className = 'cost';
-        tdCost.textContent = fmtMoney(g.cost);
+        tdCost.textContent = fmtMoney(g.cost) + ' (' + fmtCount(g.kogus) + ' tk)';
       }
       tr.appendChild(tdCost);
 
