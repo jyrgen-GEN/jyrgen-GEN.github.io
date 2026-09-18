@@ -1,0 +1,7 @@
+Detaili_kood	Detaili_nimetus	Kogus	Pikkus	Laius	Paksus	Põhimaterjal	Pealistusmaterjal	Detaili_k
+1	C-2501-V09-012	1	220	430	9	vineer 9mm		
+2	C-2501-V09-016	1	630	430	9	vineer 9mm		
+3	C-2501-V15-011	1	850	49	15	vineer 15mm		
+4	H03-846-441	1	846	441	3	HDF 3mm		
+5	V15-415-40-15	3	415	40	15	vineer 15mm		
+6	V15-849.8-40-15	1	850	40	15	vineer 15mm		
