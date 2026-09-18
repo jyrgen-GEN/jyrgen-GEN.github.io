@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lõikeleht — materjalikulu kalkulaator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EEE9DE;
+    --surface: #FBFAF6;
+    --ink: #22201B;
+    --muted: #6B6459;
+    --line: #D6CDBB;
+    --line-strong: #B7AD97;
+    --accent: #B5562F;
+    --accent-ink: #ffffff;
+    --teal: #2F5D62;
+    --good: #45633F;
+    --warn: #9C5B14;
+    --radius: 3px;
+    --font-display: 'Big Shoulders Display', sans-serif;
+    --font-body: 'IBM Plex Sans', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body{
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: -1px -1px;
+    background-attachment: fixed;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+  }
+
+  a{ color: var(--teal); }
+
+  /* ---------- Title block ---------- */
+  .titleblock{
+    position: relative;
+    background: var(--surface);
+    border: 1.5px solid var(--ink);
+    padding: 22px 22px 16px;
+    margin-bottom: 28px;
+  }
+  .titleblock::before, .titleblock::after,
+  .titleblock .tl-mark{
+    content:"";
+    position:absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events:none;
+  }
+  .crop{ position:absolute; width:14px; height:14px; }
+  .crop::before, .crop::after{
+    content:"";
+    position:absolute;
+    background: var(--ink);
+  }
+  .crop::before{ width:14px; height:1.5px; top:6.25px; left:0; }
+  .crop::after{ width:1.5px; height:14px; left:6.25px; top:0; }
+  .crop.tl{ top:-7px; left:-7px; }
+  .crop.tr{ top:-7px; right:-7px; }
+  .crop.bl{ bottom:-7px; left:-7px; }
+  .crop.br{ bottom:-7px; right:-7px; }
+
+  .titleblock h1{
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(32px, 7vw, 52px);
+    letter-spacing: 0.01em;
+    margin: 0 0 2px;
+    line-height: 0.95;
+  }
+  .titleblock .sub{
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0 0 16px;
+    max-width: 46ch;
+  }
+  .tl-fields{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-top: 1px solid var(--line-strong);
+  }
+  .tl-field{
+    flex: 1 1 140px;
+    padding: 10px 14px 4px 0;
+    border-right: 1px solid var(--line-strong);
+    margin-right: 14px;
+  }
+  .tl-field:last-child{ border-right: none; margin-right:0; }
+  .tl-field .k{
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .tl-field .v{
+    font-family: var(--font-mono);
+    font-size: 17px;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .tl-field .v.accent{ color: var(--accent); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-bottom: 34px; }
+  .sec-head{
+    display:flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1.5px dashed var(--line-strong);
+    padding-bottom: 8px;
+  }
+  .sec-num{
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 14px;
+  }
+  .sec-head h2{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    margin: 0;
+    letter-spacing: 0.005em;
+  }
+  .sec-note{
+    font-size: 13px;
+    color: var(--muted);
+    margin: -4px 0 14px;
+    max-width: 62ch;
+  }
+
+  /* ---------- Dropzone ---------- */
+  .dropzone{
+    background: var(--surface);
+    border: 1.5px dashed var(--line-strong);
+    border-radius: var(--radius);
+    padding: 26px 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color: var(--accent);
+    background: #FFF7F2;
+  }
+  .dropzone input{ display:none; }
+  .dropzone .dz-title{
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .dropzone .dz-sub{
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .filelist{
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .filecard{
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .fileitem{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .fileitem:hover{ background: #FBF3EA; }
+  .fileitem .fchevron{
+    font-family: var(--font-mono);
+    color: var(--muted);
+    flex-shrink:0;
+    width: 12px;
+    display:inline-block;
+  }
+  .fileitem .fname{
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+  .fileitem .fmeta{ color: var(--muted); flex-shrink:0; }
+  .fileitem .fqty{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    flex-shrink:0;
+  }
+  .fileitem .fqty label{
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .file-qty-input{
+    width: 62px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 4px 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--ink);
+    text-align: right;
+  }
+  .file-qty-input:focus{ outline: 2px solid var(--teal); outline-offset: 1px; }
+  .fileitem button.remove-file{
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    flex-shrink:0;
+  }
+  .fileitem button.remove-file:hover{ color: var(--accent); }
+
+  .file-preview{
+    border-top: 1px dashed var(--line-strong);
+    padding: 10px 12px 12px;
+    background: #FAF7F0;
+    overflow-x: auto;
+  }
+  .file-preview table{ font-size: 12px; }
+  .file-preview thead th{
+    padding: 6px 10px;
+    font-size: 10.5px;
+  }
+  .file-preview tbody td{
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  .file-preview .fp-caption{
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  /* ---------- Tables (desktop) ---------- */
+  .tablewrap{
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+  table{
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13.5px;
+  }
+  thead th{
+    text-align: left;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    padding: 10px 12px;
+    border-bottom: 1.5px solid var(--line-strong);
+    white-space: nowrap;
+  }
+  tbody td{
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  tbody td.name-cell{ font-family: var(--font-body); white-space: normal; min-width: 160px; }
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody tr:hover{ background: #FBF3EA; }
+  td.num{ text-align: right; }
+  td.cost{ text-align: right; font-weight: 600; }
+  td.cost.missing{ color: var(--warn); font-weight: 500; font-family: var(--font-body); font-style: italic; }
+
+  .price-input{
+    width: 92px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 5px 7px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--ink);
+    text-align: right;
+  }
+  .price-input:focus{ outline: 2px solid var(--teal); outline-offset: 1px; }
+  .price-input.empty{ border-color: var(--warn); background: #FFF7EC; }
+
+  .unit-select{
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 5px 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--ink);
+  }
+
+  tfoot td{
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    border-top: 1.5px solid var(--ink);
+    background: #F4EEE0;
+  }
+
+  .material-tag{
+    display:inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 2px 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    color: var(--muted);
+  }
+
+  /* ---------- Summary ---------- */
+  .summary-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--line-strong);
+    border: 1px solid var(--line-strong);
+  }
+  .summary-card{
+    background: var(--surface);
+    padding: 16px 18px;
+  }
+  .summary-card .m-name{
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .summary-card .m-cost{
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .summary-card .m-qty{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .grand-total{
+    background: var(--ink);
+    color: #fff;
+    padding: 20px 22px;
+    margin-top: 1px;
+    display:flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .grand-total .label{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.02em;
+  }
+  .grand-total .value{
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 600;
+    color: #F2C9A7;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn-row{ display:flex; gap:10px; flex-wrap: wrap; margin-top: 14px; }
+  button.ghost{
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  button.ghost:hover{ border-color: var(--accent); color: var(--accent); }
+
+  .empty-state{
+    padding: 30px 18px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  footer{
+    text-align:center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 50px;
+  }
+
+  /* ---------- Mobile: cards instead of tables ---------- */
+  @media (max-width: 720px){
+    .tl-fields{ flex-direction: column; }
+    .tl-field{ border-right:none; margin-right:0; border-bottom: 1px solid var(--line-strong); padding-bottom: 8px; }
+    .tl-field:last-child{ border-bottom:none; }
+
+    .tablewrap.responsive-cards table,
+    .tablewrap.responsive-cards thead,
+    .tablewrap.responsive-cards tbody,
+    .tablewrap.responsive-cards tr,
+    .tablewrap.responsive-cards td{
+      display: block;
+      width: 100%;
+    }
+    .tablewrap.responsive-cards thead{ display:none; }
+    .tablewrap.responsive-cards tbody tr{
+      border-bottom: 2px solid var(--line-strong);
+      padding: 10px 12px 12px;
+    }
+    .tablewrap.responsive-cards tbody tr:last-child{ border-bottom:none; }
+    .tablewrap.responsive-cards tbody td{
+      border-bottom: none;
+      padding: 4px 0;
+      white-space: normal;
+      display:flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .tablewrap.responsive-cards tbody td::before{
+      content: attr(data-label);
+      font-family: var(--font-body);
+      color: var(--muted);
+      font-size: 11.5px;
+      flex-shrink:0;
+      padding-top: 2px;
+    }
+    .tablewrap.responsive-cards tbody td.num,
+    .tablewrap.responsive-cards tbody td.cost{ text-align:right; }
+    .tablewrap.responsive-cards tfoot{ display:block; }
+    .tablewrap.responsive-cards tfoot tr{ display:block; }
+    .tablewrap.responsive-cards tfoot td{ display:flex; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="titleblock">
+    <span class="crop tl"></span><span class="crop tr"></span><span class="crop bl"></span><span class="crop br"></span>
+    <h1>Lõikeleht</h1>
+    <p class="sub">Detailide loendist materjali kulu ja maksumuse arvutus — CNC ja saematerjalide failide põhjal.</p>
+    <div class="tl-fields">
+      <div class="tl-field"><div class="k">KUUPÄEV</div><div class="v" id="fToday">—</div></div>
+      <div class="tl-field"><div class="k">FAILE LAADITUD</div><div class="v" id="fFileCount">0</div></div>
+      <div class="tl-field"><div class="k">DETAILE KOKKU</div><div class="v" id="fRowCount">0</div></div>
+      <div class="tl-field"><div class="k">KOGUMAKSUMUS</div><div class="v accent" id="fGrandTotal">0,00 €</div></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>Failide laadimine</h2></div>
+    <p class="sec-note">Lae üles üks või mitu .txt lõikelehe faili (tab-eraldajaga). Veerud: Detaili_kood, Detaili_nimetus, Kogus, Pikkus, Laius, Paksus, Põhimaterjal, Pealistusmaterjal. Kõik mõõdud millimeetrites. Igale failile saab lisada koguse (nt kui sama lõikeleht kordub mitu korda) — vaikimisi 1. Kliki failinimel, et näha faili sisu.</p>
+
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept=".txt,text/plain" multiple>
+      <div class="dz-title">Kliki või lohista .txt failid siia</div>
+      <div class="dz-sub">Mitme faili korraga laadimine on toetatud</div>
+    </div>
+
+    <div class="filelist" id="fileList"></div>
+    <div class="btn-row" id="fileActions" style="display:none;">
+      <button class="ghost" id="clearFilesBtn">Eemalda kõik detailid</button>
+    </div>
+  </section>
+
+  <section id="pricesSection" style="display:none;">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Materjalide hinnakiri</h2></div>
+    <p class="sec-note">Vineer-tüüpi materjalidele sisesta hind m³ kohta, HDF-tüüpi materjalidele hind m² kohta. Prügiprotsent lisab valitud protsendi jagu kulule juurde (lõikejäägi arvestamiseks) — vaikimisi 20%, muudetav iga materjali kohta eraldi. Hinnad ja prügiprotsent salvestatakse automaatselt sinu brauserisse ja jäävad alles järgmiseks korraks.</p>
+    <div class="tablewrap responsive-cards">
+      <table>
+        <thead>
+          <tr>
+            <th>Materjal</th>
+            <th>Ühik</th>
+            <th>Prügi %</th>
+            <th>Hind (€)</th>
+          </tr>
+        </thead>
+        <tbody id="pricesBody"></tbody>
+      </table>
+    </div>
+    <div class="btn-row">
+      <button class="ghost" id="resetPricesBtn">Lähtesta hinnakiri</button>
+    </div>
+  </section>
+
+  <section id="detailsSection" style="display:none;">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Detailide loend</h2></div>
+    <p class="sec-note">Kõiki detaile käsitletakse kandiliste (ristkülikukujuliste) toorikutena. Kogus ja maksumus sisaldavad juba faili koguse kordajat ja materjali prügiprotsenti.</p>
+    <div class="tablewrap responsive-cards">
+      <table>
+        <thead>
+          <tr>
+            <th>Kood</th>
+            <th>Nimetus</th>
+            <th>Kogus</th>
+            <th>Mõõdud (mm)</th>
+            <th>Materjal</th>
+            <th>Kogus (sh prügi)</th>
+            <th>Maksumus</th>
+          </tr>
+        </thead>
+        <tbody id="detailsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="summarySection" style="display:none;">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Kokkuvõte materjalide kaupa</h2></div>
+    <div class="summary-grid" id="summaryGrid"></div>
+    <div class="grand-total">
+      <span class="label">Kogumaksumus</span>
+      <span class="value" id="grandTotalValue">0,00 €</span>
+    </div>
+  </section>
+
+  <div class="empty-state" id="emptyState">Laadi üles vähemalt üks .txt fail, et alustada.</div>
+
+  <footer>Kõik andmed ja hinnad jäävad sinu brauserisse — midagi ei saadeta serverisse.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = 'loikeleht_hinnakiri_v2';
+  var DEFAULT_WASTE = 20;
+  var fileIdCounter = 0;
+
+  var state = {
+    files: [],       // {id, name, rowCount, multiplier}
+    rows: [],        // parsed detail rows, each with sourceId
+    materials: {},   // name -> {unit: 'm3'|'m2', price: number|null, waste: number}
+    expandedFiles: {} // fileId -> bool, whether its content preview is open
+  };
+
+  // ---------- persistence ----------
+  function loadPrices(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+      // migrate from older version (no waste field) if present
+      var old = localStorage.getItem('loikeleht_hinnakiri_v1');
+      if(old){
+        var parsed = JSON.parse(old);
+        Object.keys(parsed).forEach(function(name){
+          if(parsed[name].waste === undefined) parsed[name].waste = DEFAULT_WASTE;
+        });
+        return parsed;
+      }
+      return {};
+    }catch(e){ return {}; }
+  }
+  function savePrices(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.materials)); }
+    catch(e){ /* storage unavailable, ignore */ }
+  }
+
+  // ---------- parsing ----------
+  function detectUnit(name){
+    var n = name.toLowerCase();
+    if(n.indexOf('hdf') !== -1) return 'm2';
+    if(n.indexOf('vineer') !== -1 || n.indexOf('spoon') !== -1 || n.indexOf('plywood') !== -1) return 'm3';
+    return null;
+  }
+
+  function parseNumber(str){
+    if(str === undefined || str === null) return NaN;
+    var s = String(str).trim().replace(',', '.');
+    return parseFloat(s);
+  }
+
+  function parseTxt(text, sourceId){
+    var lines = text.split(/\r?\n/).filter(function(l){ return l.trim().length > 0; });
+    if(lines.length === 0) return [];
+
+    var startIdx = 0;
+    // detect header: if "Kogus" column (index 2) is not a number, treat first line as header
+    var firstCols = lines[0].split('\t');
+    if(isNaN(parseNumber(firstCols[2]))){
+      startIdx = 1;
+    }
+
+    var rows = [];
+    for(var i = startIdx; i < lines.length; i++){
+      var cols = lines[i].split('\t');
+      if(cols.length < 7) continue;
+      var kood = (cols[0] || '').trim();
+      var nimi = (cols[1] || '').trim();
+      var kogus = parseNumber(cols[2]);
+      var pikkus = parseNumber(cols[3]);
+      var laius = parseNumber(cols[4]);
+      var paksus = parseNumber(cols[5]);
+      var pohimaterjal = (cols[6] || '').trim();
+      var pealistus = (cols[7] || '').trim();
+
+      if(!pohimaterjal || isNaN(pikkus) || isNaN(laius)) continue;
+
+      rows.push({
+        kood: kood,
+        nimi: nimi,
+        kogus: isNaN(kogus) ? 1 : kogus,
+        pikkus: pikkus,
+        laius: laius,
+        paksus: isNaN(paksus) ? 0 : paksus,
+        pohimaterjal: pohimaterjal,
+        pealistus: pealistus,
+        sourceId: sourceId
+      });
+    }
+    return rows;
+  }
+
+  // ---------- calculation ----------
+  function getFileMultiplier(sourceId){
+    var f = state.files.filter(function(f){ return f.id === sourceId; })[0];
+    return (f && f.multiplier) ? f.multiplier : 1;
+  }
+
+  function effectiveKogus(row){
+    return row.kogus * getFileMultiplier(row.sourceId);
+  }
+
+  function calcRow(row){
+    var mat = state.materials[row.pohimaterjal];
+    if(!mat) return { qty: 0, unit: '—', cost: null, effKogus: effectiveKogus(row) };
+    var L = row.pikkus / 1000, W = row.laius / 1000, T = row.paksus / 1000;
+    var qty = effectiveKogus(row);
+    var qtyValue, unit;
+    if(mat.unit === 'm3'){
+      qtyValue = L * W * T * qty;
+      unit = 'm³';
+    } else {
+      qtyValue = L * W * qty;
+      unit = 'm²';
+    }
+    var waste = (mat.waste === undefined || mat.waste === null || isNaN(mat.waste)) ? 0 : mat.waste;
+    var qtyWithWaste = qtyValue * (1 + waste / 100);
+    var cost = (mat.price === null || mat.price === undefined || isNaN(mat.price)) ? null : qtyWithWaste * mat.price;
+    return { qty: qtyWithWaste, unit: unit, cost: cost, effKogus: qty };
+  }
+
+  function fmtMoney(n){
+    if(n === null || n === undefined || isNaN(n)) return '—';
+    return n.toLocaleString('et-EE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  }
+  function fmtQty(n){
+    if(n === null || n === undefined || isNaN(n)) return '—';
+    return n.toLocaleString('et-EE', { minimumFractionDigits: 3, maximumFractionDigits: 4 });
+  }
+
+  // ---------- rendering ----------
+  function rebuildMaterialsFromRows(){
+    var stored = loadPrices();
+    var seen = {};
+    state.rows.forEach(function(row){
+      var name = row.pohimaterjal;
+      if(seen[name]) return;
+      seen[name] = true;
+      if(!state.materials[name]){
+        if(stored[name]){
+          state.materials[name] = stored[name];
+          if(state.materials[name].waste === undefined || state.materials[name].waste === null){
+            state.materials[name].waste = DEFAULT_WASTE;
+          }
+        } else {
+          var unit = detectUnit(name);
+          state.materials[name] = { unit: unit || 'm3', price: null, waste: DEFAULT_WASTE };
+        }
+      }
+    });
+    // drop materials no longer present in any loaded row
+    Object.keys(state.materials).forEach(function(name){
+      if(!seen[name]) delete state.materials[name];
+    });
+  }
+
+  function renderFileList(){
+    var el = document.getElementById('fileList');
+    el.innerHTML = '';
+    state.files.forEach(function(f){
+      var card = document.createElement('div');
+      card.className = 'filecard';
+
+      var header = document.createElement('div');
+      header.className = 'fileitem';
+
+      var chevron = document.createElement('span');
+      chevron.className = 'fchevron';
+      chevron.textContent = state.expandedFiles[f.id] ? '▾' : '▸';
+      header.appendChild(chevron);
+
+      var fname = document.createElement('span');
+      fname.className = 'fname';
+      fname.textContent = f.name;
+      fname.title = 'Kliki, et vaadata faili sisu';
+      header.appendChild(fname);
+
+      var fmeta = document.createElement('span');
+      fmeta.className = 'fmeta';
+      fmeta.textContent = f.rowCount + ' rida';
+      header.appendChild(fmeta);
+
+      var fqty = document.createElement('span');
+      fqty.className = 'fqty';
+      var label = document.createElement('label');
+      label.textContent = 'Kogus ×';
+      var qtyInput = document.createElement('input');
+      qtyInput.type = 'number';
+      qtyInput.step = '1';
+      qtyInput.min = '0';
+      qtyInput.className = 'file-qty-input';
+      qtyInput.value = f.multiplier;
+      qtyInput.addEventListener('click', function(e){ e.stopPropagation(); });
+      qtyInput.addEventListener('input', function(){
+        var v = parseFloat(qtyInput.value);
+        f.multiplier = (isNaN(v) || v < 0) ? 1 : v;
+        renderDetails();
+        renderSummary();
+        renderTitleFields();
+      });
+      fqty.appendChild(label);
+      fqty.appendChild(qtyInput);
+      header.appendChild(fqty);
+
+      var btn = document.createElement('button');
+      btn.className = 'remove-file';
+      btn.title = 'Eemalda fail';
+      btn.textContent = '✕';
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        removeFile(f.id);
+      });
+      header.appendChild(btn);
+
+      header.addEventListener('click', function(){
+        state.expandedFiles[f.id] = !state.expandedFiles[f.id];
+        renderFileList();
+      });
+      card.appendChild(header);
+
+      if(state.expandedFiles[f.id]){
+        card.appendChild(buildFilePreview(f));
+      }
+
+      el.appendChild(card);
+    });
+    document.getElementById('fileActions').style.display = state.files.length ? 'flex' : 'none';
+  }
+
+  function buildFilePreview(f){
+    var wrap = document.createElement('div');
+    wrap.className = 'file-preview';
+
+    var rows = state.rows.filter(function(r){ return r.sourceId === f.id; });
+
+    var caption = document.createElement('div');
+    caption.className = 'fp-caption';
+    caption.textContent = 'Faili "' + f.name + '" sisu (' + rows.length + ' rida):';
+    wrap.appendChild(caption);
+
+    if(rows.length === 0){
+      var none = document.createElement('div');
+      none.className = 'fp-caption';
+      none.textContent = 'Sellest failist ei tuvastatud ühtegi kehtivat detaili rida.';
+      wrap.appendChild(none);
+      return wrap;
+    }
+
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    thead.innerHTML =
+      '<tr>' +
+      '<th>Kood</th><th>Nimetus</th><th>Kogus</th><th>Pikkus</th><th>Laius</th><th>Paksus</th>' +
+      '<th>Põhimaterjal</th><th>Pealistusmaterjal</th>' +
+      '</tr>';
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    rows.forEach(function(row){
+      var tr = document.createElement('tr');
+      tr.appendChild(td(row.kood, 'Kood'));
+      tr.appendChild(td(row.nimi, 'Nimetus', 'name-cell'));
+      tr.appendChild(td(String(row.kogus), 'Kogus', 'num'));
+      tr.appendChild(td(String(row.pikkus), 'Pikkus', 'num'));
+      tr.appendChild(td(String(row.laius), 'Laius', 'num'));
+      tr.appendChild(td(String(row.paksus), 'Paksus', 'num'));
+      tr.appendChild(td(row.pohimaterjal, 'Põhimaterjal'));
+      tr.appendChild(td(row.pealistus || '—', 'Pealistusmaterjal'));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  function renderPrices(){
+    var body = document.getElementById('pricesBody');
+    body.innerHTML = '';
+    var names = Object.keys(state.materials).sort();
+    names.forEach(function(name){
+      var mat = state.materials[name];
+      var tr = document.createElement('tr');
+
+      var tdName = document.createElement('td');
+      tdName.className = 'name-cell';
+      tdName.setAttribute('data-label', 'Materjal');
+      tdName.textContent = name;
+      tr.appendChild(tdName);
+
+      var tdUnit = document.createElement('td');
+      tdUnit.setAttribute('data-label', 'Ühik');
+      var sel = document.createElement('select');
+      sel.className = 'unit-select';
+      ['m3', 'm2'].forEach(function(u){
+        var opt = document.createElement('option');
+        opt.value = u;
+        opt.textContent = u === 'm3' ? 'm³ (maht)' : 'm² (pind)';
+        if(mat.unit === u) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', function(){
+        state.materials[name].unit = sel.value;
+        savePrices();
+        renderDetails();
+        renderSummary();
+      });
+      tdUnit.appendChild(sel);
+      tr.appendChild(tdUnit);
+
+      var tdWaste = document.createElement('td');
+      tdWaste.setAttribute('data-label', 'Prügi %');
+      var wasteInput = document.createElement('input');
+      wasteInput.type = 'number';
+      wasteInput.step = '1';
+      wasteInput.min = '0';
+      wasteInput.className = 'price-input';
+      wasteInput.style.width = '68px';
+      wasteInput.value = (mat.waste === undefined || mat.waste === null) ? DEFAULT_WASTE : mat.waste;
+      wasteInput.addEventListener('input', function(){
+        var v = wasteInput.value === '' ? 0 : parseFloat(wasteInput.value);
+        state.materials[name].waste = isNaN(v) ? 0 : v;
+        savePrices();
+        renderDetails();
+        renderSummary();
+        renderTitleFields();
+      });
+      tdWaste.appendChild(wasteInput);
+      tr.appendChild(tdWaste);
+
+      var tdPrice = document.createElement('td');
+      tdPrice.setAttribute('data-label', 'Hind (€)');
+      var input = document.createElement('input');
+      input.type = 'number';
+      input.step = '0.01';
+      input.min = '0';
+      input.className = 'price-input' + (mat.price === null ? ' empty' : '');
+      input.placeholder = mat.unit === 'm3' ? '€ / m³' : '€ / m²';
+      if(mat.price !== null && mat.price !== undefined) input.value = mat.price;
+      input.addEventListener('input', function(){
+        var v = input.value === '' ? null : parseFloat(input.value);
+        state.materials[name].price = (v === null || isNaN(v)) ? null : v;
+        input.classList.toggle('empty', state.materials[name].price === null);
+        savePrices();
+        renderDetails();
+        renderSummary();
+        renderTitleFields();
+      });
+      tdPrice.appendChild(input);
+      tr.appendChild(tdPrice);
+
+      body.appendChild(tr);
+    });
+  }
+
+  function renderDetails(){
+    var body = document.getElementById('detailsBody');
+    body.innerHTML = '';
+    state.rows.forEach(function(row){
+      var res = calcRow(row);
+      var tr = document.createElement('tr');
+
+      var mult = getFileMultiplier(row.sourceId);
+      var kogusText = mult !== 1 ? (row.kogus + ' × ' + mult + ' = ' + res.effKogus) : String(row.kogus);
+
+      tr.appendChild(td(row.kood, 'Kood'));
+      tr.appendChild(td(row.nimi, 'Nimetus', 'name-cell'));
+      tr.appendChild(td(kogusText, 'Kogus', 'num'));
+      tr.appendChild(td(row.pikkus + ' × ' + row.laius + ' × ' + row.paksus, 'Mõõdud (mm)'));
+
+      var matTag = document.createElement('span');
+      matTag.className = 'material-tag';
+      matTag.textContent = row.pohimaterjal;
+      var tdMat = document.createElement('td');
+      tdMat.setAttribute('data-label', 'Materjal');
+      tdMat.appendChild(matTag);
+      tr.appendChild(tdMat);
+
+      tr.appendChild(td(fmtQty(res.qty) + ' ' + res.unit, 'Kogus (sh prügi)', 'num'));
+
+      var tdCost = document.createElement('td');
+      tdCost.setAttribute('data-label', 'Maksumus');
+      if(res.cost === null){
+        tdCost.className = 'cost missing';
+        tdCost.textContent = 'hind puudu';
+      } else {
+        tdCost.className = 'cost';
+        tdCost.textContent = fmtMoney(res.cost);
+      }
+      tr.appendChild(tdCost);
+
+      body.appendChild(tr);
+    });
+  }
+
+  function td(text, label, extraClass){
+    var el = document.createElement('td');
+    if(extraClass) el.className = extraClass;
+    el.setAttribute('data-label', label);
+    el.textContent = text;
+    return el;
+  }
+
+  function renderSummary(){
+    var grid = document.getElementById('summaryGrid');
+    grid.innerHTML = '';
+    var totals = {}; // material -> {qty, unit, cost, hasAllPrices}
+    state.rows.forEach(function(row){
+      var res = calcRow(row);
+      var name = row.pohimaterjal;
+      if(!totals[name]) totals[name] = { qty: 0, unit: res.unit, cost: 0, complete: true };
+      totals[name].qty += res.qty;
+      totals[name].unit = res.unit;
+      if(res.cost === null){ totals[name].complete = false; }
+      else { totals[name].cost += res.cost; }
+    });
+
+    var grandTotal = 0;
+    var anyIncomplete = false;
+    Object.keys(totals).sort().forEach(function(name){
+      var t = totals[name];
+      grandTotal += t.cost;
+      if(!t.complete) anyIncomplete = true;
+
+      var card = document.createElement('div');
+      card.className = 'summary-card';
+      card.innerHTML =
+        '<div class="m-name">' + escapeHtml(name) + '</div>' +
+        '<div class="m-cost">' + fmtMoney(t.cost) + (t.complete ? '' : ' *') + '</div>' +
+        '<div class="m-qty">' + fmtQty(t.qty) + ' ' + t.unit + '</div>';
+      grid.appendChild(card);
+    });
+
+    document.getElementById('grandTotalValue').textContent = fmtMoney(grandTotal) + (anyIncomplete ? ' *' : '');
+  }
+
+  function renderTitleFields(){
+    document.getElementById('fFileCount').textContent = state.files.length;
+    document.getElementById('fRowCount').textContent = state.rows.length;
+    var total = 0;
+    state.rows.forEach(function(row){
+      var res = calcRow(row);
+      if(res.cost !== null) total += res.cost;
+    });
+    document.getElementById('fGrandTotal').textContent = fmtMoney(total);
+  }
+
+  function toggleSections(){
+    var has = state.rows.length > 0;
+    document.getElementById('pricesSection').style.display = has ? 'block' : 'none';
+    document.getElementById('detailsSection').style.display = has ? 'block' : 'none';
+    document.getElementById('summarySection').style.display = has ? 'block' : 'none';
+    document.getElementById('emptyState').style.display = has ? 'none' : 'block';
+  }
+
+  function renderAll(){
+    renderFileList();
+    renderPrices();
+    renderDetails();
+    renderSummary();
+    renderTitleFields();
+    toggleSections();
+  }
+
+  function escapeHtml(s){
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- file handling ----------
+  function handleFiles(fileListObj){
+    var files = Array.prototype.slice.call(fileListObj);
+    if(files.length === 0) return;
+    var pending = files.length;
+    files.forEach(function(file){
+      var reader = new FileReader();
+      var id = 'f' + (++fileIdCounter);
+      reader.onload = function(e){
+        var rows = parseTxt(e.target.result, id);
+        state.files.push({ id: id, name: file.name, rowCount: rows.length, multiplier: 1 });
+        state.rows = state.rows.concat(rows);
+        pending--;
+        if(pending === 0){
+          rebuildMaterialsFromRows();
+          renderAll();
+        }
+      };
+      reader.onerror = function(){
+        pending--;
+        if(pending === 0){
+          rebuildMaterialsFromRows();
+          renderAll();
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    });
+  }
+
+  function removeFile(id){
+    var idx = -1;
+    for(var i = 0; i < state.files.length; i++){ if(state.files[i].id === id){ idx = i; break; } }
+    if(idx === -1) return;
+    state.rows = state.rows.filter(function(r){ return r.sourceId !== id; });
+    state.files.splice(idx, 1);
+    delete state.expandedFiles[id];
+    rebuildMaterialsFromRows();
+    renderAll();
+  }
+
+  function clearAllFiles(){
+    state.files = [];
+    state.rows = [];
+    state.expandedFiles = {};
+    rebuildMaterialsFromRows();
+    renderAll();
+  }
+
+  // ---------- init ----------
+  function init(){
+    state.materials = {};
+    document.getElementById('fToday').textContent = new Date().toLocaleDateString('et-EE');
+
+    var dropzone = document.getElementById('dropzone');
+    var fileInput = document.getElementById('fileInput');
+
+    dropzone.addEventListener('click', function(){ fileInput.click(); });
+    fileInput.addEventListener('change', function(){
+      handleFiles(fileInput.files);
+      fileInput.value = '';
+    });
+    ['dragenter', 'dragover'].forEach(function(evt){
+      dropzone.addEventListener(evt, function(e){
+        e.preventDefault(); e.stopPropagation();
+        dropzone.classList.add('drag');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function(evt){
+      dropzone.addEventListener(evt, function(e){
+        e.preventDefault(); e.stopPropagation();
+        dropzone.classList.remove('drag');
+      });
+    });
+    dropzone.addEventListener('drop', function(e){
+      if(e.dataTransfer && e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+    });
+
+    document.getElementById('clearFilesBtn').addEventListener('click', function(){
+      if(confirm('Kas eemaldada kõik laaditud detailid? Hinnakiri jääb alles.')) clearAllFiles();
+    });
+    document.getElementById('resetPricesBtn').addEventListener('click', function(){
+      if(confirm('Kas lähtestada kogu salvestatud hinnakiri?')){
+        try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+        state.materials = {};
+        rebuildMaterialsFromRows();
+        renderAll();
+      }
+    });
+
+    toggleSections();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
