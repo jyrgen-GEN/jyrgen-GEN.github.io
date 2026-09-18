@@ -191,6 +191,22 @@
     border-radius: var(--radius);
     overflow: hidden;
   }
+  .filecard.file-inactive{
+    background: #F3F0E7;
+  }
+  .filecard.file-inactive .fname{ color: var(--muted); }
+  .fileitem .factive{
+    display:flex;
+    align-items:center;
+    flex-shrink:0;
+    cursor: pointer;
+  }
+  .fileitem .factive input{
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--good);
+  }
   .fileitem{
     display:flex;
     align-items:center;
@@ -495,7 +511,7 @@
 
   <section>
     <div class="sec-head"><span class="sec-num">01</span><h2>Failide laadimine</h2></div>
-    <p class="sec-note">Lae üles üks või mitu .txt lõikelehe faili (tab-eraldajaga). Veerud: Detaili_kood, Detaili_nimetus, Kogus, Pikkus, Laius, Paksus, Põhimaterjal, Pealistusmaterjal. Kõik mõõdud millimeetrites. Igale failile saab lisada koguse (nt kui sama lõikeleht kordub mitu korda) — vaikimisi 1. Kliki failinimel, et näha faili sisu.</p>
+    <p class="sec-note">Lae üles üks või mitu .txt lõikelehe faili (tab-eraldajaga). Veerud: Detaili_kood, Detaili_nimetus, Kogus, Pikkus, Laius, Paksus, Põhimaterjal, Pealistusmaterjal. Kõik mõõdud millimeetrites. Igale failile saab lisada koguse (nt kui sama lõikeleht kordub mitu korda) — vaikimisi 1. Kliki failinimel, et näha faili sisu. Kui projekti <code>txt/</code> kaustas on juba faile (vt README), laetakse need siia automaatselt, kuid need EI osale hinna arvutuses enne, kui märgid need linnukesega aktiivseks.</p>
 
     <div class="dropzone" id="dropzone">
       <input type="file" id="fileInput" accept=".txt,text/plain" multiple>
@@ -532,7 +548,7 @@
 
   <section id="detailsSection" style="display:none;">
     <div class="sec-head"><span class="sec-num">03</span><h2>Detailide loend</h2></div>
-    <p class="sec-note">Kõiki detaile käsitletakse kandiliste (ristkülikukujuliste) toorikutena. Kogus ja maksumus sisaldavad juba faili koguse kordajat ja materjali prügiprotsenti.</p>
+    <p class="sec-note">Kõiki detaile käsitletakse kandiliste (ristkülikukujuliste) toorikutena. Kogus ja maksumus sisaldavad juba faili koguse kordajat ja materjali prügiprotsenti. Kuvatakse ainult aktiivseks märgitud failide detailid.</p>
     <div class="tablewrap responsive-cards">
       <table>
         <thead>
@@ -663,6 +679,11 @@
     return (f && f.multiplier) ? f.multiplier : 1;
   }
 
+  function isFileActive(sourceId){
+    var f = state.files.filter(function(f){ return f.id === sourceId; })[0];
+    return f ? !!f.active : true;
+  }
+
   function effectiveKogus(row){
     return row.kogus * getFileMultiplier(row.sourceId);
   }
@@ -726,7 +747,7 @@
     el.innerHTML = '';
     state.files.forEach(function(f){
       var card = document.createElement('div');
-      card.className = 'filecard';
+      card.className = 'filecard' + (f.active ? '' : ' file-inactive');
 
       var header = document.createElement('div');
       header.className = 'fileitem';
@@ -736,15 +757,39 @@
       chevron.textContent = state.expandedFiles[f.id] ? '▾' : '▸';
       header.appendChild(chevron);
 
+      var activeLabel = document.createElement('label');
+      activeLabel.className = 'factive';
+      activeLabel.title = 'Kas fail osaleb hinna arvutuses';
+      var activeBox = document.createElement('input');
+      activeBox.type = 'checkbox';
+      activeBox.checked = !!f.active;
+      activeBox.addEventListener('click', function(e){ e.stopPropagation(); });
+      activeBox.addEventListener('change', function(){
+        f.active = activeBox.checked;
+        renderFileList();
+        renderDetails();
+        renderSummary();
+        renderTitleFields();
+      });
+      activeLabel.appendChild(activeBox);
+      header.appendChild(activeLabel);
+
       var fname = document.createElement('span');
       fname.className = 'fname';
       fname.textContent = f.name;
       fname.title = 'Kliki, et vaadata faili sisu';
       header.appendChild(fname);
 
+      if(f.origin === 'repo'){
+        var tag = document.createElement('span');
+        tag.className = 'material-tag';
+        tag.textContent = 'txt/ kaust';
+        header.appendChild(tag);
+      }
+
       var fmeta = document.createElement('span');
       fmeta.className = 'fmeta';
-      fmeta.textContent = f.rowCount + ' rida';
+      fmeta.textContent = f.rowCount + ' rida' + (f.active ? '' : ' · ei osale arvutuses');
       header.appendChild(fmeta);
 
       var fqty = document.createElement('span');
@@ -922,7 +967,8 @@
   function renderDetails(){
     var body = document.getElementById('detailsBody');
     body.innerHTML = '';
-    state.rows.forEach(function(row){
+    var activeRows = state.rows.filter(function(row){ return isFileActive(row.sourceId); });
+    activeRows.forEach(function(row){
       var res = calcRow(row);
       var tr = document.createElement('tr');
 
@@ -971,7 +1017,8 @@
     var grid = document.getElementById('summaryGrid');
     grid.innerHTML = '';
     var totals = {}; // material -> {qty, unit, cost, hasAllPrices}
-    state.rows.forEach(function(row){
+    var activeRows = state.rows.filter(function(row){ return isFileActive(row.sourceId); });
+    activeRows.forEach(function(row){
       var res = calcRow(row);
       var name = row.pohimaterjal;
       if(!totals[name]) totals[name] = { qty: 0, unit: res.unit, cost: 0, complete: true };
@@ -1002,9 +1049,10 @@
 
   function renderTitleFields(){
     document.getElementById('fFileCount').textContent = state.files.length;
-    document.getElementById('fRowCount').textContent = state.rows.length;
+    var activeRows = state.rows.filter(function(row){ return isFileActive(row.sourceId); });
+    document.getElementById('fRowCount').textContent = activeRows.length;
     var total = 0;
-    state.rows.forEach(function(row){
+    activeRows.forEach(function(row){
       var res = calcRow(row);
       if(res.cost !== null) total += res.cost;
     });
@@ -1044,7 +1092,7 @@
       var id = 'f' + (++fileIdCounter);
       reader.onload = function(e){
         var rows = parseTxt(e.target.result, id);
-        state.files.push({ id: id, name: file.name, rowCount: rows.length, multiplier: 1 });
+        state.files.push({ id: id, name: file.name, rowCount: rows.length, multiplier: 1, active: true, origin: 'upload' });
         state.rows = state.rows.concat(rows);
         pending--;
         if(pending === 0){
@@ -1080,6 +1128,41 @@
     state.expandedFiles = {};
     rebuildMaterialsFromRows();
     renderAll();
+  }
+
+  // ---------- repo-folder auto-load ----------
+  function loadRepoFiles(){
+    fetch('txt/manifest.json', { cache: 'no-store' }).then(function(res){
+      if(!res.ok) return null;
+      return res.json();
+    }).then(function(names){
+      if(!names || !Array.isArray(names) || names.length === 0) return;
+
+      var tasks = names.map(function(name){
+        return fetch('txt/' + encodeURIComponent(name), { cache: 'no-store' })
+          .then(function(fRes){ return fRes.ok ? fRes.text() : null; })
+          .then(function(text){ return { name: name, text: text }; })
+          .catch(function(){ return { name: name, text: null }; });
+      });
+
+      Promise.all(tasks).then(function(results){
+        var loadedAny = false;
+        results.forEach(function(r){
+          if(r.text === null) return;
+          var id = 'r' + (++fileIdCounter);
+          var rows = parseTxt(r.text, id);
+          state.files.push({ id: id, name: r.name, rowCount: rows.length, multiplier: 1, active: false, origin: 'repo' });
+          state.rows = state.rows.concat(rows);
+          loadedAny = true;
+        });
+        if(loadedAny){
+          rebuildMaterialsFromRows();
+          renderAll();
+        }
+      });
+    }).catch(function(){
+      // no txt/manifest.json, or fetch blocked (e.g. opened directly as a local file) — ignore silently
+    });
   }
 
   // ---------- init ----------
@@ -1124,6 +1207,7 @@
     });
 
     toggleSections();
+    loadRepoFiles();
   }
 
   document.addEventListener('DOMContentLoaded', init);

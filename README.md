@@ -17,6 +17,24 @@ Töötab täielikult brauseris — ei vaja serverit ega andmebaasi. Sobib majuta
 
 Hinnad ja prügiprotsendid salvestatakse automaatselt brauseri `localStorage`'isse — järgmine kord, kui lehte avad (samas brauseris, samast aadressist), on eelmised väärtused juba täidetud. Uue väärtuse sisestamine kirjutab vana üle. Faili koguse kordaja EI salvestu (see kehtib ainult jooksva laadimise kohta, kuna failid endid ei salvestu).
 
+## `txt/` kaust — failide automaatne sisselugemine
+
+Projektis on kaust `txt/`, kuhu saad ise lisada `.txt` lõikelehe faile, mis laetakse veebilehel **automaatselt** sisse (nt kui majutad GitHub Pages'is).
+
+**Kuidas lisada fail:**
+1. Kopeeri oma `.txt` fail `txt/` kausta.
+2. Ava `txt/manifest.json` ja lisa faili nimi massiivi (tähtede/suurtähtede osas täpselt sama nagu failinimi), näiteks:
+   ```json
+   ["lehed_2026_01.txt", "lehed_2026_02.txt"]
+   ```
+3. Commiti ja pushi GitHubi. Kui leht avatakse (nt GitHub Pages'i lingilt), loetakse need failid automaatselt sisse.
+
+**Oluline:** `txt/` kaustast automaatselt laetud failid **EI OSALE** kohe hinna arvutuses — need on failide loendis linnukeseta (mitteaktiivsed). Arvutusse kaasamiseks tuleb igal failil eraldi linnuke ette panna. Nii saad hoida kaustas kogu ajaloolist/varu-materjali, ilma et see kogemata kokkuvõtet mõjutaks.
+
+Käsitsi üleslaaditud (drag & drop / kliki) failid on vaikimisi **aktiivsed** (linnuke juba peal), nagu senini.
+
+**Piirang:** see automaatlaadimine töötab ainult siis, kui leht on avatud üle `http(s)://` (nt GitHub Pages, mõni muu veebimajutus, või kohalik server nagu `python3 -m http.server`). Kui avad `index.html` failina otse brauseris topeltklõpsuga (`file://...`), blokeerib brauser turvakaalutlustel sellised päringud ja `txt/` kausta faile automaatselt sisse ei loeta — üleslaadimine käsitsi töötab aga alati.
+
 ## Sisendfaili formaat
 
 Tab-eraldajaga `.txt` fail, esimene rida on veerupäis:
@@ -40,3 +58,4 @@ Kogu töötlus toimub kasutaja brauseris. Ühtegi faili ega hinda ei saadeta kuh
 - Eeldab kandilisi detaile (servaviimistlust/freesitud kujusid ei arvestata).
 - Pealistusmaterjali (Pealistusmaterjal veerg) hinda hetkel ei arvutata — kuvatakse ainult detaili juures infona.
 - Hinnad on brauseripõhised (localStorage), mitte jagatud mitme kasutaja/seadme vahel. Kui on vaja hinnakirja jagada meeskonnaga, tuleks lisada eraldi hinnakirja fail (nt JSON) või lihtne backend.
+- `txt/manifest.json` tuleb iga uue faili lisamisel käsitsi uuendada — automaatset kausta sisu loendamist staatilise saidi peal (nt GitHub Pages) ei ole tehniliselt võimalik teha.
